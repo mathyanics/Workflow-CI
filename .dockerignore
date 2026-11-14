@@ -1,0 +1,29 @@
+# Git and CI/CD
+.git
+.github
+
+# MLflow run directories and artifacts
+MLProject/mlruns/
+mlruns/
+MLProject/model_artifacts/
+
+# Large datasets & raw data
+MLProject/data/
+MLProject/credit_default_preprocessed.csv
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Documentation
+*.md
