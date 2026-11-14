@@ -1,0 +1,75 @@
+name: Credit Default Model CI
+
+on:
+  push:
+    paths:
+      - "MLProject/**"
+      - ".github/workflows/train.yml"
+  workflow_dispatch:
+
+jobs:
+  train:
+    name: Train & Evaluate Model
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: MLProject
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.7"
+
+      - name: Verify Python environment
+        run: python --version
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run MLflow Project
+        run: mlflow run . --env-manager=local
+        env:
+          MLFLOW_TRACKING_URI: file://${{ github.workspace }}/MLProject/mlruns
+
+      - name: Extract latest finished MLflow run ID
+        id: run
+        run: |
+          python - <<'PY'
+          import os
+          from mlflow.tracking import MlflowClient
+
+          tracking_uri = os.environ["MLFLOW_TRACKING_URI"]
+          client = MlflowClient(tracking_uri=tracking_uri)
+
+          candidates = []
+          for exp in client.search_experiments():
+              for run in client.search_runs([exp.experiment_id], max_results=100):
+                  if run.info.status == "FINISHED":
+                      artifacts = client.list_artifacts(run.info.run_id)
+                      if any(artifact.path == "model" for artifact in artifacts):
+                          candidates.append(run)
+
+          if not candidates:
+              raise SystemExit("No successful MLflow run with a model artifact found")
+
+          latest_run = max(candidates, key=lambda run: run.info.start_time)
+          run_id = latest_run.info.run_id
+          print(f"Latest successful model run ID: {run_id}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              print(f"run_id={run_id}", file=f)
+          PY
+        env:
+          MLFLOW_TRACKING_URI: file://${{ github.workspace }}/MLProject/mlruns
+
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-runs
+          path: MLProject/mlruns/
+          if-no-files-found: error

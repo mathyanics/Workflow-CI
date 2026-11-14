@@ -1,0 +1,15 @@
+# Core Tracking & Orchestration
+mlflow==2.19.0
+SQLAlchemy<2.1
+
+# Data Manipulation & Scientific Computing
+numpy==2.2.1
+pandas==2.3.3
+
+# Machine Learning
+scikit-learn==1.6.0
+joblib>=1.4
+
+# Visualization
+matplotlib>=3.8
+seaborn>=0.13
